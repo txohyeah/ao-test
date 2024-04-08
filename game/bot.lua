@@ -169,52 +169,52 @@ end
 function decideNextAction()
 
   --#region test
-  Times = Times + 1
+  -- Times = Times + 1
   
-  print("Round: " .. Times)
-  if LockingTarget == nil and Times < 3 then
-    print("No target. Move randomly. Waiting for " .. Times)
-    randomMove()
-    return
-  else
-    chooseRandomTarget()
-    local me = LatestGameState.Players[ao.id]
-    local player = LatestGameState.Players[LockingTarget]
-    
-    if isFight(me, player) or me.energy == 100 then
-      print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
-      print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
-      moveToTarget(me, player)
-    else
-      print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
-      if inRange(me.x, me.y, player.x, player.y, 3) then
-        runaway(me, player)
-        print("Runaway.")
-      else
-        print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.red)
-        randomMove()
-      end
-    end
-  end
-  --#endregion
-
-  -- local me = LatestGameState.Players[ao.id]
-  -- local player = LatestGameState.Players[LockingTarget]
-  
-  -- if isFight(me, player) then
-  --   print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
-  --   print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
-  --   moveToTarget(me, player)
+  -- print("Round: " .. Times)
+  -- if LockingTarget == nil and Times < 3 then
+  --   print("No target. Move randomly. Waiting for " .. Times)
+  --   randomMove()
+  --   return
   -- else
-  --   print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
-  --   if inRange(me.x, me.y, player.x, player.y, 3) then
-  --     runaway(me, player)
-  --     print("Runaway.")
+  --   chooseRandomTarget()
+  --   local me = LatestGameState.Players[ao.id]
+  --   local player = LatestGameState.Players[LockingTarget]
+    
+  --   if isFight(me, player) or me.energy == 100 then
+  --     print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
+  --     print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
+  --     moveToTarget(me, player)
   --   else
-  --     print("No enongh energy. random move.")
-  --     randomMove()
+  --     print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
+  --     if inRange(me.x, me.y, player.x, player.y, 3) then
+  --       runaway(me, player)
+  --       print("Runaway.")
+  --     else
+  --       print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.red)
+  --       randomMove()
+  --     end
   --   end
   -- end
+  --#endregion
+
+  local me = LatestGameState.Players[ao.id]
+  local player = LatestGameState.Players[LockingTarget]
+  
+  if isFight(me, player) then
+    print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
+    print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
+    moveToTarget(me, player)
+  else
+    print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
+    if inRange(me.x, me.y, player.x, player.y, 3) then
+      runaway(me, player)
+      print("Runaway.")
+    else
+      print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.red)
+      randomMove()
+    end
+  end
 end
 
 -- 打印游戏公告并触发游戏状态更新的handler。
