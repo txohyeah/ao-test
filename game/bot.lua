@@ -198,12 +198,24 @@ function decideNextAction()
   -- end
   --#endregion
 
+  if LockingTarget == nil then
+    findWeakPlayer()
+  end
+
   local me = LatestGameState.Players[ao.id]
   local player = LatestGameState.Players[LockingTarget]
+
+  if me.health < 50 then
+    ao.send({Target = Game, Action = "Withdraw" })
+  end
+
+  if player == nil or player == undefined then
+    findWeakPlayer()
+    player = LatestGameState.Players[LockingTarget]
+  end
   
   if isFight(me, player) then
     print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
-    print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
     moveToTarget(me, player)
   else
     print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
@@ -215,6 +227,9 @@ function decideNextAction()
       randomMove()
     end
   end
+  print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
+  print("You state: (health:" .. me.health .. ", energy:" .. me.energy .. ")")
+  print("You Position: (x:" .. me.x .. ", y:" .. me.y .. ")")
 end
 
 -- 打印游戏公告并触发游戏状态更新的handler。
