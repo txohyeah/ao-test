@@ -56,7 +56,7 @@ end
 
 -- 锁定最弱的敌人（首先，血量最小并且血量小于66；其次，能量最小；）
 function findWeakPlayer()
-  local heathValue = 66
+  local heathValue = 100
   local energyValue = 100
   local weakPlayer = nil
   for pid, player in pairs(LatestGameState.Players) do
@@ -209,7 +209,8 @@ function decideNextAction()
     ao.send({Target = Game, Action = "Withdraw" })
   end
 
-  if player == nil or player == undefined then
+  -- 没有目标，或者目标生命值大于66的情况下，每次都重新找敌人
+  if player == nil or player == undefined or player.health > 66 then
     findWeakPlayer()
     player = LatestGameState.Players[LockingTarget]
   end
@@ -253,6 +254,26 @@ Handlers.add(
   end
 )
 
+Handlers.add(
+  "AutoPay",
+  Handlers.utils.hasMatchingTag("Action", "Removed from the Game"),
+  function ()
+    print("Auto-paying confirmation fees.")
+    ao.send({Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = Game})
+  end
+)
+
+Handlers.add(
+  "AutoStart",
+  Handlers.utils.hasMatchingTag("Action", "Payment-Received"),
+  function ()
+    print("Auto start game.")
+    ao.send({Target = Game, Action = "GetGameState"})
+    InAction = false
+  end
+)
+
+
 -- 接收游戏状态信息后更新游戏状态的handler。
 Handlers.add(
   "UpdateGameState",
@@ -274,6 +295,7 @@ Handlers.add(
       InAction = false
     else
       print("You are not in game.")
+      InAction = false
     end
 
     if not InAction then
@@ -302,3 +324,5 @@ Handlers.add(
     end
   end
 )
+
+
