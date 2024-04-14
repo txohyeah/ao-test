@@ -214,7 +214,7 @@ Handlers.add(
     if (msg.Event == "Tick" or msg.Event == "Started-Game") and not InAction then
       InAction = true
       print(Colors.gray .. "Getting game state...From Announcement" .. Colors.reset)
-      ao.send({Target = Game, Action = "GetGameState"})
+      ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
     elseif msg.Event == "Attack" then
       print(Colors.red .. msg.Data .. Colors.reset)
       InAction = false
@@ -238,7 +238,7 @@ Handlers.add(
     print(msg.Data)
     print(Colors.gray .. "Getting game state...after Player-Action" .. Colors.reset)
     InAction = true
-    ao.send({Target = Game, Action = "GetGameState"})
+    ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
   end
 )
 
@@ -292,7 +292,7 @@ Handlers.add(
   Handlers.utils.hasMatchingTag("Action", "Payment-Received"),
   function (msg)
     print(Colors.gray .. "Auto start game...GetGameState... From AutoStart" .. Colors.reset)
-    ao.send({Target = Game, Action = "GetGameState"})
+    ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
     InAction = true
   end
 )
@@ -324,7 +324,7 @@ Handlers.add(
     if not InAction then
       InAction = true
       print(Colors.gray .. "Getting game state...From UpdateGameState" .. Colors.reset)
-      ao.send({Target = Game, Action = "GetGameState"})
+      ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
     else
       print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
     end
@@ -338,7 +338,7 @@ Handlers.add(
   function (msg)
     if not InAction then
       InAction = true
-      ao.send({Target = Game, Action = "GetGameState"})
+      ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
       print(Colors.red .. "Be hitted!" .. Colors.reset)
       print(Colors.gray .. "GetGameState..From ReturnAttack" .. Colors.reset)
     else
