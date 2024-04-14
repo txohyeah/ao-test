@@ -2,7 +2,7 @@
 -- 初始化全局变量来存储最新的游戏状态和游戏主机进程。
 LatestGameState = LatestGameState or nil
 InAction = InAction or false -- 防止代理同时采取多个操作。
-
+Paying = Paying or false
 -- 目标敌人的process id，为nil则为暂时没有目标
 LockingTarget = LockingTarget or nil
 -- 因此测试的ao-effect中，没人主动战斗，因此如果超过5个轮次没有人战斗，那么我们主动求战
@@ -94,9 +94,11 @@ local function getDirections(x1, y1, x2, y2, isAway)
 
   x1, x2 = adjustPosition(x1, x2)
   y1, y2 = adjustPosition(y1, y2)
+--  print("x1: " .. x1 .. " y1:" .. y1 .. " x2: " .. x2 .. " y2: " .. y2)
 
   local dx, dy = x2 - x1, y2 - y1
   local dirX, dirY = "", ""
+--  print("dx:" .. dx .. " dy:" .. dy)
 
   if isAway then
     if dx > 0 then dirX = "Left" else dirX = "Right" end
@@ -115,12 +117,11 @@ function moveToTarget(me, player)
   if inRange(me.x, me.y, player.x, player.y, 1) then
     attack()
     print(Colors.red .. "Target in range, Attacking!" .. Colors.reset)
+  else
+    local moveDir = getDirections(me.x, me.y, player.x, player.y, false)
+    print(Colors.red .. "Approaching the enemy. Move " .. moveDir .. Colors.reset)
+    ao.send({Target = Game, Action = "PlayerMove", Player = ao.id, Direction = moveDir})
   end
-
-  -- 攻击以后，要尽量移动，避免被反击
-  local moveDir = getDirections(me.x, me.y, player.x, player.y, false)
-  print(Colors.red .. "Approaching the enemy. Move " .. moveDir .. Colors.reset)
-  ao.send({Target = Game, Action = "PlayerMove", Player = ao.id, Direction = moveDir})
 end
 
 -- 从目标玩家那里逃跑
@@ -167,37 +168,6 @@ end
 -- 如果没有击杀，在没有能量的时候，随机移动。
 --#endregion
 function decideNextAction()
-
-  --#region test
-  -- Times = Times + 1
-  
-  -- print("Round: " .. Times)
-  -- if LockingTarget == nil and Times < 3 then
-  --   print("No target. Move randomly. Waiting for " .. Times)
-  --   randomMove()
-  --   return
-  -- else
-  --   chooseRandomTarget()
-  --   local me = LatestGameState.Players[ao.id]
-  --   local player = LatestGameState.Players[LockingTarget]
-    
-  --   if isFight(me, player) or me.energy == 100 then
-  --     print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
-  --     print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
-  --     moveToTarget(me, player)
-  --   else
-  --     print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
-  --     if inRange(me.x, me.y, player.x, player.y, 3) then
-  --       runaway(me, player)
-  --       print("Runaway.")
-  --     else
-  --       print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.red)
-  --       randomMove()
-  --     end
-  --   end
-  -- end
-  --#endregion
-
   if LockingTarget == nil then
     findWeakPlayer()
   end
@@ -216,19 +186,22 @@ function decideNextAction()
   end
   
   if isFight(me, player) then
-    print("Fight with " .. LockingTarget .. "Position:" .. "(" .. player.x .. "," .. player.y .. ")")
     moveToTarget(me, player)
   else
-    print("You energy is " .. me.energy .. ". Can't fight with " .. LockingTarget .. ".")
+    print("You energy is " .. me.energy)
     if inRange(me.x, me.y, player.x, player.y, 3) then
       runaway(me, player)
       print("Runaway.")
     else
-      print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.red)
+      print(Colors.red .. "No enongh energy. But you are safe now. random move." .. Colors.reset)
       randomMove()
     end
   end
+
+  InAction = false
+  print("LockingTarget:" .. LockingTarget)
   print("Player state: (health:" .. player.health .. ", energy:" .. player.energy .. ")")
+  print("Player Position: (x:" .. player.x .. ", y:" .. player.y .. ")")
   print("You state: (health:" .. me.health .. ", energy:" .. me.energy .. ")")
   print("You Position: (x:" .. me.x .. ", y:" .. me.y .. ")")
 end
@@ -238,38 +211,89 @@ Handlers.add(
   "PrintAnnouncements",
   Handlers.utils.hasMatchingTag("Action", "Announcement"),
   function (msg)
-    print(msg.Event)
-    if msg.Event == "Started-Waiting-Period" then
-      print("Auto-paying confirmation fees.")
-      ao.send({ Target = Game, Action = "Transfer", Recipient = Game, Quantity = "1000"})
-    elseif msg.Event == "PlayerMoved" then
-      print(msg.Data)
-    elseif (msg.Event == "Tick" or msg.Event == "Started-Game") and not InAction then
+    if (msg.Event == "Tick" or msg.Event == "Started-Game") and not InAction then
       InAction = true
+      print(Colors.gray .. "Getting game state...From Announcement" .. Colors.reset)
       ao.send({Target = Game, Action = "GetGameState"})
+    elseif msg.Event == "Attack" then
+      print(Colors.red .. msg.Data .. Colors.reset)
+      InAction = false
     elseif InAction then
-      print("Previous action still in progress. Skipping.")
+      print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
     end
     print(Colors.green .. msg.Event .. ": " .. msg.Data .. Colors.reset)
   end
 )
 
 Handlers.add(
+  "HandlerPlaying",
+  function (msg)
+    if msg.Action == "Player-Moved" or msg.Action == "Successful-Hit" or msg.Action == "" then
+      return true
+    else 
+      return false
+    end
+  end,
+  function (msg)
+    print(msg.Data)
+    print(Colors.gray .. "Getting game state...after Player-Action" .. Colors.reset)
+    InAction = true
+    ao.send({Target = Game, Action = "GetGameState"})
+  end
+)
+
+-- Withdraw 以后自动支付，参加比赛
+Handlers.add(
   "AutoPay",
+  function (msg)
+    if msg.Action == "Removed from the Game" then
+      return true
+    else
+      return false
+    end
+  end,
   Handlers.utils.hasMatchingTag("Action", "Removed from the Game"),
+  function (msg)
+    if Paying then
+      print("You have paid just now.")
+    else
+      print(Colors.red .. "Withdraw CRED. Removed from the Game." .. Colors.reset)
+      print("Auto-paying confirmation fees.")
+      ao.send({Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = Game})
+      Paying = true
+    end
+  end
+)
+
+-- 确认支付，以后设置为 Paying 为false，即可以再次支付
+Handlers.add(
+  "HandlePaying",
+  Handlers.utils.hasMatchingTag("Action", "Debit-Notice"),
+  function (msg)
+    print("Paying success.")
+    Paying = false
+  end
+)
+
+-- 被淘汰 以后自动支付，参加比赛
+Handlers.add(
+  "AutoPay",
+  Handlers.utils.hasMatchingTag("Action", "Eliminated"),
   function ()
-    print("Auto-paying confirmation fees.")
+    print("After Eliminated. Auto-paying confirmation fees.")
     ao.send({Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = Game})
   end
 )
 
+
+-- 防止inbox里面存在太多的内容
 Handlers.add(
   "AutoStart",
   Handlers.utils.hasMatchingTag("Action", "Payment-Received"),
-  function ()
-    print("Auto start game.")
+  function (msg)
+    print(Colors.gray .. "Auto start game...GetGameState... From AutoStart" .. Colors.reset)
     ao.send({Target = Game, Action = "GetGameState"})
-    InAction = false
+    InAction = true
   end
 )
 
@@ -290,20 +314,19 @@ Handlers.add(
     end
 
     if isInGame() then
-      print("Deciding next action.")
+      print(Colors.gray .. "Deciding next action." .. Colors.reset)
       decideNextAction()
-      InAction = false
     else
-      print("You are not in game.")
-      InAction = false
+      print(Colors.red .. "You are not in game." ..Colors.reset)
     end
 
+    -- Game进程总是卡住，在收到Action进行消息发送的同时，也在每次执行完decision以后发送一次！
     if not InAction then
       InAction = true
-      print(Colors.gray .. "Getting game state..." .. Colors.reset)
+      print(Colors.gray .. "Getting game state...From UpdateGameState" .. Colors.reset)
       ao.send({Target = Game, Action = "GetGameState"})
     else
-      print("Previous action still in progress. Skipping.")
+      print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
     end
   end
 )
@@ -315,14 +338,22 @@ Handlers.add(
   function (msg)
     if not InAction then
       InAction = true
-      attack()
-      print(Colors.red .. "Be hitted, Attacking!" .. Colors.reset)
-      InAction = false
-      ao.send({Target = ao.id, Action = "Tick"})
+      ao.send({Target = Game, Action = "GetGameState"})
+      print(Colors.red .. "Be hitted!" .. Colors.reset)
+      print(Colors.gray .. "GetGameState..From ReturnAttack" .. Colors.reset)
     else
-      print("Previous action still in progress. Skipping.")
+      print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
     end
   end
 )
 
 
+Handlers.add(
+  "Return2Cred",
+  Handlers.utils.hasMatchingTag("Action", "Credit-Notice"),
+  function (msg)
+    print(msg.Data)
+    print(Colors.blue .. "Credit Received. Auto Withdraw." .. Colors.reset)
+    ao.send({Target = Game, Action = "Withdraw" })
+  end
+)
