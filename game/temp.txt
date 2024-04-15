@@ -1,0 +1,73 @@
+{
+   Read-Only = false,
+   Nonce = 10330,
+   Timestamp = 1713165502589,
+   Hash-Chain = "RnOopm5IenbUO4bD6zWlrIcH4Pa0eaGVNGmzfpbhcTI",
+   Cron = false,
+   Owner = "fcoN_xJeisVsPXA-trzVAuIiqO3ydLQxM-L4XbrQKzY",
+   Tags = {
+     Type = "Message",
+     Pushed-For = "Xw_pz2Zq5zbDJlggWSvGYLgD-cSwACCG0PhPV35aKOY",
+     Health = "35",
+     Variant = "ao.TN.1",
+     From-Module = "1PdCJiXhNafpJbvC-sjxWTeNzbf9Q_RfUNs84GYoPm0",
+     Action = "Hit",
+     Damage = "38",
+     From-Process = "MsVWw4JeFHBEHQZxbs1n8JvuqgGsuUUYI8sg40ECJ44",
+     Data-Protocol = "ao",
+     Ref_ = "128545"
+  },
+   Forwarded-By = "fcoN_xJeisVsPXA-trzVAuIiqO3ydLQxM-L4XbrQKzY",
+   Health = "35",
+   Anchor = "00000000000000000000000000128545",
+   Epoch = 0,
+   TagArray = {
+    {
+       value = "128545",
+       name = "Ref_"
+    },
+    {
+       value = "Hit",
+       name = "Action"
+    },
+    {
+       value = "35",
+       name = "Health"
+    },
+    {
+       value = "38",
+       name = "Damage"
+    },
+    {
+       value = "ao",
+       name = "Data-Protocol"
+    },
+    {
+       value = "Message",
+       name = "Type"
+    },
+    {
+       value = "ao.TN.1",
+       name = "Variant"
+    },
+    {
+       value = "MsVWw4JeFHBEHQZxbs1n8JvuqgGsuUUYI8sg40ECJ44",
+       name = "From-Process"
+    },
+    {
+       value = "1PdCJiXhNafpJbvC-sjxWTeNzbf9Q_RfUNs84GYoPm0",
+       name = "From-Module"
+    },
+    {
+       value = "Xw_pz2Zq5zbDJlggWSvGYLgD-cSwACCG0PhPV35aKOY",
+       name = "Pushed-For"
+    }
+   },
+   From = "MsVWw4JeFHBEHQZxbs1n8JvuqgGsuUUYI8sg40ECJ44",
+   Damage = "38",
+   Block-Height = 1404502,
+   Target = "u39N5UttvlKmMVaLOweZ6rET0vzZSQ4xad0fH1ve8WY",
+   Pushed-For = "Xw_pz2Zq5zbDJlggWSvGYLgD-cSwACCG0PhPV35aKOY",
+   Action = "Hit",
+   Id = "Le79KevqY2cAQ7gAb8KpETYU2D_4mnsmQJXUoTCZ0QE",
+   Signature = "P2nS-rzMmXWml_FMwvH9QELsulEsnZIn5AMwU1TUyf-xiRx7U9Bqdp5F4IR-k0cpSsGFkBwWOuKbErg9BLgn4vT-9oxKcaYFb4girO1dRDzgkZynKUkWqKAmrI55U6Ay34g-zoNNg4kiTcvW2Oz8bepbGlWGsixD8S-edBMDXmG8HpImfvZbBO9e3I

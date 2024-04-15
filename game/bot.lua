@@ -51,6 +51,9 @@ end
 
 -- 根据玩家和目标状态判断是否进入战斗状态。
 function isFight(me, player)
+  if me.energy == 100 then
+    return true
+  end
   return player.health < me.energy * 2/3
 end
 
@@ -74,19 +77,41 @@ end
 
 -- 如果两个玩家在不同半场，则按照反向计算方向
 function adjustPosition(n1, n2)
-  if n1 < 20 and n2 >= 20 then
-    n2 = n2 - 40
-  end
-
-  if n1 >= 20 and n2 < 20 then
-    n1 = n1 - 40
+  if math.abs(n1 - n2) > 20 then
+    if n1 < 20 and n2 >= 20 then
+      n2 = n2 - 40
+    end
+    
+    if n1 >= 20 and n2 < 20 then
+      n1 = n1 - 40
+    end
   end
 
   return n1, n2
 end
 
+-- function adjustPosition(n1, n2)
+--   if n1 < 20 and n2 >= 20 then
+--     n2 = n2 - 40
+--   end
+
+--   if n1 >= 20 and n2 < 20 then
+--     n1 = n1 - 40
+--   end
+
+--   return n1, n2
+-- end
+
+
+
 -- 找到 player 1 接近 player 2 的方向
 -- isAway == true 远离; isAway == false 接近;
+--[[
+  Up = {x = 0, y = -1}, Down = {x = 0, y = 1},
+  Left = {x = -1, y = 0}, Right = {x = 1, y = 0},
+  UpRight = {x = 1, y = -1}, UpLeft = {x = -1, y = -1},
+  DownRight = {x = 1, y = 1}, DownLeft = {x = -1, y = 1}
+]]
 local function getDirections(x1, y1, x2, y2, isAway)
   if isAway == nil then
     isAway = false
@@ -94,11 +119,10 @@ local function getDirections(x1, y1, x2, y2, isAway)
 
   x1, x2 = adjustPosition(x1, x2)
   y1, y2 = adjustPosition(y1, y2)
---  print("x1: " .. x1 .. " y1:" .. y1 .. " x2: " .. x2 .. " y2: " .. y2)
-
+  print("x1: " .. x1 .. " y1:" .. y1 .. " x2: " .. x2 .. " y2: " .. y2)
   local dx, dy = x2 - x1, y2 - y1
   local dirX, dirY = "", ""
---  print("dx:" .. dx .. " dy:" .. dy)
+  print("dx:" .. dx .. " dy:" .. dy)
 
   if isAway then
     if dx > 0 then dirX = "Left" else dirX = "Right" end
@@ -235,7 +259,7 @@ Handlers.add(
     end
   end,
   function (msg)
-    print(msg.Data)
+    print(msg.Action .. " " .. msg.Data)
     print(Colors.gray .. "Getting game state...after Player-Action" .. Colors.reset)
     InAction = true
     ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
@@ -244,15 +268,14 @@ Handlers.add(
 
 -- Withdraw 以后自动支付，参加比赛
 Handlers.add(
-  "AutoPay",
+  "AutoPayAfterWithdraw",
   function (msg)
-    if msg.Action == "Removed from the Game" then
+    if msg.Action == "Removed" then
       return true
     else
       return false
     end
   end,
-  Handlers.utils.hasMatchingTag("Action", "Removed from the Game"),
   function (msg)
     if Paying then
       print("You have paid just now.")
@@ -277,7 +300,7 @@ Handlers.add(
 
 -- 被淘汰 以后自动支付，参加比赛
 Handlers.add(
-  "AutoPay",
+  "AutoPayAfterEliminated",
   Handlers.utils.hasMatchingTag("Action", "Eliminated"),
   function ()
     print("After Eliminated. Auto-paying confirmation fees.")
@@ -321,13 +344,13 @@ Handlers.add(
     end
 
     -- Game进程总是卡住，在收到Action进行消息发送的同时，也在每次执行完decision以后发送一次！
-    if not InAction then
-      InAction = true
-      print(Colors.gray .. "Getting game state...From UpdateGameState" .. Colors.reset)
-      ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
-    else
-      print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
-    end
+    -- if not InAction then
+    --   InAction = true
+    --   print(Colors.gray .. "Getting game state...From UpdateGameState" .. Colors.reset)
+    --   ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
+    -- else
+    --   print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
+    -- end
   end
 )
 
@@ -352,7 +375,6 @@ Handlers.add(
   "Return2Cred",
   Handlers.utils.hasMatchingTag("Action", "Credit-Notice"),
   function (msg)
-    print(msg.Data)
     print(Colors.blue .. "Credit Received. Auto Withdraw." .. Colors.reset)
     ao.send({Target = Game, Action = "Withdraw" })
   end
