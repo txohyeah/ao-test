@@ -72,7 +72,28 @@ function findWeakPlayer()
     end
   end
   
+  print(Colors.gray .. "findWeakPlayer:" .. weakPlayer .. Colors.reset)
   LockingTarget = weakPlayer
+end
+
+-- 找到附近的弱玩家
+function findWeakNearPlayer(me)
+  local weakNearPlayer = nil
+  for pid, player in pairs(LatestGameState.Players) do
+    if pid ~= ao.id and player.health < 40 then
+      local x1, x2 = adjustPosition(me.x, player.x)
+      local y1, y2 = adjustPosition(me.y, player.y)
+      if inRange(x1, y1, x2, y2, 10) then
+        weakNearPlayer = pid
+        break
+      end
+    end
+  end
+  
+  if weakNearPlayer then
+    print(Colors.gray .. "findWeakNearPlayer:" .. weakNearPlayer .. Colors.reset)
+  end
+  LockingTarget = weakNearPlayer
 end
 
 -- 如果两个玩家在不同半场，则按照反向计算方向
@@ -119,10 +140,10 @@ local function getDirections(x1, y1, x2, y2, isAway)
 
   x1, x2 = adjustPosition(x1, x2)
   y1, y2 = adjustPosition(y1, y2)
-  print("x1: " .. x1 .. " y1:" .. y1 .. " x2: " .. x2 .. " y2: " .. y2)
+--  print("x1: " .. x1 .. " y1:" .. y1 .. " x2: " .. x2 .. " y2: " .. y2)
   local dx, dy = x2 - x1, y2 - y1
   local dirX, dirY = "", ""
-  print("dx:" .. dx .. " dy:" .. dy)
+--  print("dx:" .. dx .. " dy:" .. dy)
 
   if isAway then
     if dx > 0 then dirX = "Left" else dirX = "Right" end
@@ -192,15 +213,19 @@ end
 -- 如果没有击杀，在没有能量的时候，随机移动。
 --#endregion
 function decideNextAction()
-  if LockingTarget == nil then
-    findWeakPlayer()
-  end
 
   local me = LatestGameState.Players[ao.id]
   local player = LatestGameState.Players[LockingTarget]
 
+  findWeakNearPlayer(me)
+
+  if LockingTarget == nil then
+    findWeakPlayer()
+  end
+
   if me.health < 50 then
     ao.send({Target = Game, Action = "Withdraw" })
+    Paying = false
   end
 
   -- 没有目标，或者目标生命值大于66的情况下，每次都重新找敌人
@@ -280,21 +305,11 @@ Handlers.add(
     if Paying then
       print("You have paid just now.")
     else
+      Paying = true
       print(Colors.red .. "Withdraw CRED. Removed from the Game." .. Colors.reset)
       print("Auto-paying confirmation fees.")
       ao.send({Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = Game})
-      Paying = true
     end
-  end
-)
-
--- 确认支付，以后设置为 Paying 为false，即可以再次支付
-Handlers.add(
-  "HandlePaying",
-  Handlers.utils.hasMatchingTag("Action", "Debit-Notice"),
-  function (msg)
-    print("Paying success.")
-    Paying = false
   end
 )
 
@@ -376,6 +391,8 @@ Handlers.add(
   Handlers.utils.hasMatchingTag("Action", "Credit-Notice"),
   function (msg)
     print(Colors.blue .. "Credit Received. Auto Withdraw." .. Colors.reset)
+    print(msg.Data)
     ao.send({Target = Game, Action = "Withdraw" })
+    Paying = false
   end
 )
