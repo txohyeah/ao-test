@@ -179,9 +179,9 @@ end
 -- 攻击
 function attack() 
   local playerEnergy = LatestGameState.Players[ao.id].energy
-  if playerEnergy == undefined then
+  if playerEnergy == nil then
     print(Colors.red .. "Attack-Failed. Unable to read energy." .. Colors.reset)
-  elseif playerEnergy == 0 then
+  elseif playerEnergy < 5 then
     print(Colors.red .. "Attack-Failed. Player has insufficient energy." .. Colors.reset)
   else
     ao.send({Target = Game, Action = "PlayerAttack", Player = ao.id, AttackEnergy = tostring(playerEnergy)})
@@ -378,6 +378,7 @@ Handlers.add(
       InAction = true
       ao.send({Target = Game, Action = "GetGameState", Name = Name, Owner = Owner })
       print(Colors.red .. "Be hitted!" .. Colors.reset)
+      attack()
       print(Colors.gray .. "GetGameState..From ReturnAttack" .. Colors.reset)
     else
       print(Colors.gray .. "Previous action still in progress. Skipping." .. Colors.reset)
