@@ -22,7 +22,7 @@ Send({ Target = ThreeKingdoms, Action = "RequestWuzhu"})
 
 ## 游戏规则
 ### 等待期：5min
-欢迎来到三国赌马场。
+欢迎来到三国赛马场。
 ```
 Send({Target = ThreeKingdoms, Action = "JumpInto"})
 ```
