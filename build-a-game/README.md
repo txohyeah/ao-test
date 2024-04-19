@@ -7,6 +7,9 @@ Therefore, in-game tokens can be acquired directly via requests, and when there 
 
 If anyone modify this code to develop commercial games, it shall be entirely unrelated to the author, and they shall bear all legal and other consequences themselves!
 
+# Source Code
+[Source Code](3kingdoms-speedup.lua)
+
 # Three Kingdoms Horse Racing Game
 This game's inspiration comes from a horse racing scene within a casual game set in the Three Kingdoms backdrop, as depicted in the following image.
 ![alt text](image.png)
