@@ -1,61 +1,90 @@
-# 注意：
-游戏的制作仅为ao中的Quest 4，不能用于制作任何商业用途。特别是赌马类游戏！
-如有人用该代码制作商业类游戏，与作者无关。后果自负！
+English | [简体中文](README.zh-CN.md)
 
-# 三国赛马场
-这个游戏的灵感来自一款以三国为背景的休闲类游戏中的赛马的场景，如下图所示：
+# Notice
+The game creation is exclusively for AO test Quest 4 and is not to be used for any commercial purposes, especially for horse racing games. 
+
+Therefore, in-game tokens can be acquired directly via requests, and when there is a shortage, process owner can mint more tokens.
+
+If anyone modify this code to develop commercial games, it shall be entirely unrelated to the author, and they shall bear all legal and other consequences themselves!
+
+# Three Kingdoms Horse Racing Game
+This game's inspiration comes from a horse racing scene within a casual game set in the Three Kingdoms backdrop, as depicted in the following image.
 ![alt text](image.png)
-一共四匹良驹：的卢(Dilu)、绝影(BlackShadow)、赤兔(Chitu)、抓黄飞电(YellowLighting)
 
-一开始可以通过RequestWuzhu获取三国五铢钱。
+There are four elite steeds in total: Dilu, BlackShadow, Chitu, and YellowLighting (transliterated from Chinese names: 的卢, 绝影, 赤兔, 抓黄飞电).
+
+Initially, one can acquire Three Kingdoms' Wu Zhu coins through a RequestWuzhu function call.
+
+```
 ThreeKingdoms = "cVVsTGjJPSf7eckrJaT97M9UhUOHrarzkC5UjIZg2Zg"
 Send({ Target = ThreeKingdoms, Action = "RequestWuzhu"})
+```
 
-
-## 游戏规则
-允许最少2个玩家。
-### 等待期：5min
-最后进来的一个玩家进行质押以后，会刷新5min的等待期
-
-1.玩家可以选择一匹马，然后押注自己喜欢的马。
-
+## Rules
+Firstly, Welcome to Three Kingdoms Horse Racing Game!
+```
 Send({Target = ThreeKingdoms, Action = "JumpInto"})
+```
 
-返回欢迎来到三国赌马场。可以选择的马匹。
+### Waiting period
+Upon the last player entering and staking, a 5-minute waiting period will be refreshed.
 
+1.Players have the option to choose a horse and place a bet on their favored steed.
+```
 Send({Target = ThreeKingdoms, Action = "StakingHorse", Recipient = ThreeKingdoms, Quantity = "1000", Horse = "Dilu"})
+```
 
-输入的马匹不存在，则随机选择一匹马。
+If the input a horse that does not exist, a random horse will be chosen.
 
-当等待期时间结束后，任何一个玩家，可以通过  Send({Target = ThreeKingdoms, Action = "HorseTicker"}) 来开始游戏。
+Once the waiting period concludes, any player can initiate the game using a HorseTicker message.
 
+Player can use a Retire message to exit the game.
+```
 Send({Target = ThreeKingdoms, Action = "Retire"})
+```
 
-如果已经质押了五铢钱，是不能退赛的。等当前这局结束以后可以退赛。
+If Wuzhu coins have already been staked, players are not allowed to withdraw from the race until the current round concludes.
 
-### 游戏期：
-有马匹到达终点时，结束。
+### Playing period
+2.The finish line consists of 20 squares. The horse that reaches it first wins. The calculation rules for the distance advanced each turn are as follows:
+```
+local function calStakingRatioForRunning(ratio)
+    if ratio == nil then
+        return 0
+    end
 
-2.终点为20个格子。先达到的马匹获胜。每回合前进的距离等于，ceil( random(1,3) * max(stakingRatio, 0.7))
+    if ratio > 0.7 then
+        return 0.7
+    end
 
-解释：1~3的随机数 乘以 质押占比，但是占比不超过50%，不小于10%。计算结果如果存在小数，则向上取整。
+    if ratio < 0.1 then
+        return 0.1
+    end
 
-3.马匹有一次释放技能的机会。变成 5 * ceil(1 * random(1,3) * max(stakingRatio, 0.7)) 的距离，即普通移动的五倍。也可能会还没释放游戏就结束了。
+    return ratio
+end
 
-4.如果有多匹马到达了终点，则并列第一。
+local ratio = calStakingRatioForRunning(Staking["StakingRatioHorse"][horseId])
 
-5.第一名可以平分所有的筹码。
+math.ceil(math.random() * 3 * ratio)
+```
 
+3.Each horse has one opportunity to use a skill, which enables them to move at a distance five times their regular pace. It is also possible that the game ends before a horse has the chance to use its skill. The function to trigger the skill is as follows:
+```
+local function ultimateSkill(state)
+    if not state["ultimateSkill"] then
+        return false
+    end
 
-# 如何加载游戏
-1.加载所需代码
-.load-blueprint token
-.load path/3kingdoms-arena.lua
-.load path/3kingdoms-speedup.lua
+    if math.random() > 0.8 then
+        state["ultimateSkill"] = false
+        return true
+    end
 
-2.设置参数
-ThreeKingdoms = "your process"
-PaymentTokenAddr = "the process which holds token"
+    return false
+end
+```
 
-3.正式开张
-Send({Target = ao.id, Action = "Launched"})
+4.The game ends when a horse reaches the finish line. In the event that multiple horses reach the finish line simultaneously, they are declared joint winners.
+
+5.The player who staked on the winning horse will receive all the Wu Zhu coins according to their staking proportion.
